@@ -2,7 +2,7 @@
 
 **Project**: QR Attendance Management System  
 **Repository**: `/usr/sas/FlaskProjects/qr_attendance`  
-**Last Updated**: February 21, 2026 (20:54 UTC)
+**Last Updated**: February 21, 2026 (21:31 UTC)
 
 ---
 
@@ -319,11 +319,69 @@ Success Rate: 100%
 
 ---
 
+### 2026-02-21: PostgreSQL Window Function Compatibility Fix
+
+#### Session Overview
+- **Objective**: Fix calendar events endpoint 500 error
+- **Status**: ✅ RESOLVED
+- **Error**: "DISTINCT is not implemented for window functions"
+- **Time to Fix**: ~15 minutes
+
+#### Problem & Root Cause Analysis
+**Reported Issue**: GET `/api/v1/calendar/events` returning 500 error
+```json
+{
+  "error": "DISTINCT is not implemented for window functions",
+  "success": false
+}
+```
+
+**Investigation**:
+- Located error in `get_events_by_month()` stored procedure (line 285 of statistics.sql)
+- PostgreSQL 12 does not support `COUNT(DISTINCT ...) OVER (PARTITION BY ...)` syntax
+- Modern SQL syntax incompatible with deployed PostgreSQL version
+
+**Root Cause**: Window functions with DISTINCT aggregate not supported in PostgreSQL 12
+
+#### Solution Applied
+1. **Replaced Window Function**:
+   - **Before**: `COUNT(DISTINCT e.id) OVER (PARTITION BY EXTRACT(DAY FROM e.start_at))::BIGINT`
+   - **After**: Subquery approach - calculate event count separately for each day
+
+2. **Updated SQL Logic**:
+   ```sql
+   (SELECT COUNT(DISTINCT e2.id)::BIGINT FROM event e2 
+    WHERE EXTRACT(DAY FROM e2.start_at) = EXTRACT(DAY FROM e.start_at)
+    AND EXTRACT(MONTH FROM e2.start_at)::INT = p_month
+    AND EXTRACT(YEAR FROM e2.start_at)::INT = p_year
+    AND e2.status != 'canceled'
+    AND e2.deleted_at IS NULL) as event_count
+   ```
+
+3. **Verification**:
+   ```bash
+   TOKEN="<valid_jwt>"
+   curl -s "http://localhost:5000/api/v1/calendar/events?month=2&year=2026" \
+     -H "Authorization: Bearer $TOKEN"
+   # Response: 200 OK with calendar data for February 2026
+   ```
+
+#### Result
+✅ Calendar endpoint now returns 200 OK with complete event data  
+✅ All 45 events visible in calendar view  
+✅ Attendance statistics displayed correctly  
+✅ No database errors
+
+#### Commits
+- **33564c7**: Fix PostgreSQL 12 window function incompatibility
+
+---
+
 ## Version Control
 
 - **Repository**: Git
-- **Branch**: main (protected)
-- **Last Commit**: Feb 21, 2026 - Test fixes and documentation
+- **Branch**: main (protected), develop (integration)
+- **Last Commit**: Feb 21, 2026 - Window function fix for calendar endpoint
 - **Commit Strategy**: Feature branches → PR → Review → Merge
 
 ---
