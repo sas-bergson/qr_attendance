@@ -114,6 +114,8 @@ def refresh():
     """
     Refresh access token using refresh token
     ---
+    security:
+      - Bearer: []
     parameters:
       - name: Authorization
         in: header
@@ -128,10 +130,18 @@ def refresh():
           properties:
             access_token:
               type: string
+              example: "eyJ0eXAiOiJKV1QiLCJhbGc..."
             expires_in:
               type: integer
+              example: 3600
       401:
         description: Invalid or expired refresh token
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Invalid or expired refresh token"
     """
     try:
         user_id = get_jwt_identity()
@@ -170,6 +180,8 @@ def get_current_user():
     """
     Get current authenticated user information
     ---
+    security:
+      - Bearer: []
     parameters:
       - name: Authorization
         in: header
@@ -184,12 +196,24 @@ def get_current_user():
           properties:
             user_id:
               type: integer
+              example: 1
             user_name:
               type: string
+              example: "John Doe"
+            email:
+              type: string
+              example: "john@university.edu"
             role:
               type: string
+              example: "Student"
       401:
-        description: Unauthorized
+        description: Unauthorized or missing Authorization header
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+              example: "Missing Authorization Header"
     """
     try:
         user_id = get_jwt_identity()

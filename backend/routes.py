@@ -101,6 +101,8 @@ def get_courses_by_department(dept_id):
     """
     Get all courses for a specific department
     ---
+    security:
+      - Bearer: []
     parameters:
       - name: dept_id
         in: path
@@ -110,6 +112,12 @@ def get_courses_by_department(dept_id):
     responses:
       200:
         description: List of courses in the department
+        schema:
+          type: array
+          items:
+            type: object
+      401:
+        description: Unauthorized - Missing or invalid authentication token
       500:
         description: Database error
     """
@@ -137,6 +145,8 @@ def get_events_by_course(course_id):
     """
     Get all events for a specific course
     ---
+    security:
+      - Bearer: []
     parameters:
       - name: course_id
         in: path
@@ -146,6 +156,12 @@ def get_events_by_course(course_id):
     responses:
       200:
         description: List of events in the course
+        schema:
+          type: array
+          items:
+            type: object
+      401:
+        description: Unauthorized - Missing or invalid authentication token
       500:
         description: Database error
     """
@@ -180,6 +196,8 @@ def get_registrations_by_event(event_id):
     """
     Get all registrations for a specific event
     ---
+    security:
+      - Bearer: []
     parameters:
       - name: event_id
         in: path
@@ -189,6 +207,12 @@ def get_registrations_by_event(event_id):
     responses:
       200:
         description: List of registrations for the event
+        schema:
+          type: array
+          items:
+            type: object
+      401:
+        description: Unauthorized - Missing or invalid authentication token
       500:
         description: Database error
     """
@@ -216,6 +240,8 @@ def get_course_statistics(course_id):
     """
     Get statistics for a specific course
     ---
+    security:
+      - Bearer: []
     parameters:
       - name: course_id
         in: path
@@ -225,6 +251,10 @@ def get_course_statistics(course_id):
     responses:
       200:
         description: Statistics for the course
+        schema:
+          type: object
+      401:
+        description: Unauthorized - Missing or invalid authentication token
       500:
         description: Database error
     """
@@ -293,9 +323,17 @@ def get_all_courses_statistics():
     """
     Get statistics for all courses
     ---
+    security:
+      - Bearer: []
     responses:
       200:
         description: List of all courses with their statistics
+        schema:
+          type: array
+          items:
+            type: object
+      401:
+        description: Unauthorized - Missing or invalid authentication token
       500:
         description: Database error
     """

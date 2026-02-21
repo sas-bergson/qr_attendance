@@ -31,7 +31,18 @@ def create_app():
             "title": "Attendance Management System API",
             "version": "1.0.0",
             "description": "RESTful API for querying attendance database statistics using PostgreSQL stored procedures"
-        }
+        },
+        "securityDefinitions": {
+            "Bearer": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header",
+                "description": "JWT Authorization header using Bearer scheme. Example: 'Authorization: Bearer {token}'"
+            }
+        },
+        "security": [
+            {"Bearer": []}
+        ]
     })
     
     # Register blueprints
