@@ -1,14 +1,51 @@
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import Database, dict_from_cursor
 
-api = Blueprint('api', __name__, url_prefix='/api')
+api = Blueprint('api', __name__, url_prefix='/api/v1')
+
+
+@api.route('/health', methods=['GET'])
+def health_check():
+    """
+    Health check endpoint - no authentication required
+    ---
+    responses:
+      200:
+        description: API is healthy
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: "ok"
+            database:
+              type: string
+              example: "connected"
+    """
+    try:
+        with Database.get_cursor() as cursor:
+            cursor.execute("SELECT 1")
+        return jsonify({
+            'status': 'ok',
+            'database': 'connected'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'database': 'disconnected',
+            'error': str(e)
+        }), 503
 
 
 @api.route('/departments', methods=['GET'])
+@jwt_required()
 def get_departments():
     """
     Get all departments with statistics
     ---
+    security:
+      - Bearer: []
     responses:
       200:
         description: List of all departments with their statistics
@@ -59,6 +96,7 @@ def get_departments():
 
 
 @api.route('/department/<int:dept_id>/courses', methods=['GET'])
+@jwt_required()
 def get_courses_by_department(dept_id):
     """
     Get all courses for a specific department
@@ -94,6 +132,7 @@ def get_courses_by_department(dept_id):
 
 
 @api.route('/course/<int:course_id>/events', methods=['GET'])
+@jwt_required()
 def get_events_by_course(course_id):
     """
     Get all events for a specific course
@@ -122,10 +161,10 @@ def get_events_by_course(course_id):
                     event_status,
                     start_at,
                     organizer_name,
-                    registrations,
-                    present,
-                    absent,
-                    late
+                    registration_count,
+                    present_count,
+                    absent_count,
+                    late_count
                 FROM get_events_by_course(%s)
                 ORDER BY start_at;
             """, (course_id,))
@@ -136,6 +175,7 @@ def get_events_by_course(course_id):
 
 
 @api.route('/event/<int:event_id>/registrations', methods=['GET'])
+@jwt_required()
 def get_registrations_by_event(event_id):
     """
     Get all registrations for a specific event
@@ -171,6 +211,7 @@ def get_registrations_by_event(event_id):
 
 
 @api.route('/course/<int:course_id>/statistics', methods=['GET'])
+@jwt_required()
 def get_course_statistics(course_id):
     """
     Get statistics for a specific course
@@ -208,6 +249,7 @@ def get_course_statistics(course_id):
 
 
 @api.route('/student/<int:student_id>/attendance', methods=['GET'])
+@jwt_required()
 def get_student_attendance_summary(student_id):
     """
     Get attendance summary for a specific student
@@ -246,6 +288,7 @@ def get_student_attendance_summary(student_id):
 
 
 @api.route('/courses', methods=['GET'])
+@jwt_required()
 def get_all_courses_statistics():
     """
     Get statistics for all courses
@@ -278,29 +321,205 @@ def get_all_courses_statistics():
         return jsonify({'error': str(e)}), 500
 
 
-@api.route('/health', methods=['GET'])
-def health_check():
+@api.route('/calendar/events', methods=['GET'])
+@jwt_required()
+def get_calendar_events():
     """
-    Health check endpoint
+    Get events for a specific month (calendar view)
     ---
+    security:
+      - Bearer: []
+    parameters:
+      - name: month
+        in: query
+        type: integer
+        required: true
+        description: Month (1-12)
+        example: 2
+      - name: year
+        in: query
+        type: integer
+        required: true
+        description: Year (e.g., 2026)
+        example: 2026
+      - name: user_id
+        in: query
+        type: integer
+        required: false
+        description: Optional user ID to filter events (organizer or registered student)
+        example: 5
     responses:
       200:
-        description: Database is healthy and connected
+        description: Calendar events grouped by day
         schema:
           type: object
           properties:
-            status:
-              type: string
-              example: "healthy"
-            database:
-              type: string
-              example: "connected"
+            success:
+              type: boolean
+              example: true
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  day_of_month:
+                    type: integer
+                    example: 15
+                  event_count:
+                    type: integer
+                    example: 2
+                  events:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        event_id:
+                          type: integer
+                        event_name:
+                          type: string
+                        event_type:
+                          type: string
+                        event_status:
+                          type: string
+                        start_at:
+                          type: string
+                          format: date-time
+                        stop_at:
+                          type: string
+                          format: date-time
+                        location:
+                          type: string
+                        course_code:
+                          type: string
+                        course_title:
+                          type: string
+                        organizer_name:
+                          type: string
+                        registration_count:
+                          type: integer
+                        attendance_stats:
+                          type: object
+                          properties:
+                            present:
+                              type: integer
+                            absent:
+                              type: integer
+                            late:
+                              type: integer
+      400:
+        description: Missing required parameters
+      401:
+        description: Unauthorized
       500:
-        description: Database connection failed
+        description: Server error
     """
     try:
+        # Get parameters
+        month = request.args.get('month', type=int)
+        year = request.args.get('year', type=int)
+        user_id = request.args.get('user_id', type=int)
+        
+        # Validate parameters
+        if not month or not year:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required parameters: month and year'
+            }), 400
+        
+        if month < 1 or month > 12:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid month. Must be between 1 and 12'
+            }), 400
+        
+        # Get current user ID from JWT token
+        current_user_id = get_jwt_identity()
+        
+        # If user_id is not provided, use current user
+        if user_id is None:
+            user_id = current_user_id
+        
+        # Call the stored procedure
         with Database.get_cursor() as cursor:
-            cursor.execute("SELECT 1")
-        return jsonify({'status': 'healthy', 'database': 'connected'}), 200
+            cursor.execute(
+                """
+                SELECT 
+                    day_of_month,
+                    event_count,
+                    event_id,
+                    event_name,
+                    event_type,
+                    event_status,
+                    start_at,
+                    stop_at,
+                    location,
+                    course_code,
+                    course_title,
+                    organizer_name,
+                    registration_count,
+                    present_count,
+                    absent_count,
+                    late_count
+                FROM get_events_by_month(%s, %s, %s)
+                ORDER BY day_of_month, start_at
+                """,
+                (month, year, user_id if user_id != current_user_id else None)
+            )
+            rows = dict_from_cursor(cursor)
+        
+        # Group events by day for the calendar
+        calendar_data = {}
+        for row in rows:
+            day = row['day_of_month']
+            
+            if day not in calendar_data:
+                calendar_data[day] = {
+                    'day_of_month': day,
+                    'event_count': row['event_count'],
+                    'events': []
+                }
+            
+            # Add event details
+            event = {
+                'event_id': row['event_id'],
+                'event_name': row['event_name'],
+                'event_type': row['event_type'],
+                'event_status': row['event_status'],
+                'start_at': row['start_at'].isoformat() if row['start_at'] else None,
+                'stop_at': row['stop_at'].isoformat() if row['stop_at'] else None,
+                'location': row['location'],
+                'course': {
+                    'code': row['course_code'],
+                    'title': row['course_title']
+                },
+                'organizer': row['organizer_name'],
+                'registration_count': row['registration_count'],
+                'attendance_stats': {
+                    'present': row['present_count'],
+                    'absent': row['absent_count'],
+                    'late': row['late_count']
+                }
+            }
+            calendar_data[day]['events'].append(event)
+        
+        # Convert to sorted list
+        result = sorted(calendar_data.values(), key=lambda x: x['day_of_month'])
+        
+        return jsonify({
+            'success': True,
+            'month': month,
+            'year': year,
+            'data': result
+        }), 200
+        
+    except ValueError:
+        return jsonify({
+            'success': False,
+            'error': 'Invalid parameter types. month and year must be integers'
+        }), 400
     except Exception as e:
-        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+

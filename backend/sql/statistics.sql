@@ -274,9 +274,86 @@ $$ LANGUAGE SQL;
 \echo '✓ Stored Procedure 6: get_student_attendance_summary() created successfully'
 
 -- ============================================================================
--- DEMONSTRATION: Using the Stored Procedures
+-- STORED PROCEDURE 7: Get Events by Month (Calendar View)
 -- ============================================================================
+-- Purpose: Display all events for a specific month ordered by day
+-- Parameters: p_month (INT 1-12), p_year (INT), p_user_id (BIGINT, optional for filtering)
+-- Returns: Events grouped by day with event type, status, and student count
 
+DROP FUNCTION IF EXISTS get_events_by_month (INT, INT, BIGINT);
+
+CREATE OR REPLACE FUNCTION get_events_by_month(
+    p_month INT,
+    p_year INT,
+    p_user_id BIGINT DEFAULT NULL
+)
+RETURNS TABLE (
+    day_of_month INT,
+    event_count BIGINT,
+    event_id BIGINT,
+    event_name VARCHAR,
+    event_type TEXT,
+    event_status TEXT,
+    start_at TIMESTAMP WITH TIME ZONE,
+    stop_at TIMESTAMP WITH TIME ZONE,
+    location VARCHAR,
+    course_code VARCHAR,
+    course_title VARCHAR,
+    organizer_name VARCHAR,
+    registration_count BIGINT,
+    present_count BIGINT,
+    absent_count BIGINT,
+    late_count BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        EXTRACT(DAY FROM e.start_at)::INT as day_of_month,
+        COUNT(DISTINCT e.id) OVER (PARTITION BY EXTRACT(DAY FROM e.start_at))::BIGINT as event_count,
+        e.id::BIGINT,
+        e.name,
+        e.type::text,
+        e.status::text,
+        e.start_at,
+        e.stop_at,
+        e.location,
+        c.code,
+        c.title,
+        u.name,
+        COUNT(DISTINCT CASE WHEN r.status = 'completed' THEN r.id END)::BIGINT as registration_count,
+        COUNT(DISTINCT CASE WHEN p.status = 'present' THEN p.id END)::BIGINT as present_count,
+        COUNT(DISTINCT CASE WHEN p.status = 'absent' THEN p.id END)::BIGINT as absent_count,
+        COUNT(DISTINCT CASE WHEN p.status = 'late' THEN p.id END)::BIGINT as late_count
+    FROM event e
+    LEFT JOIN course c ON c.id = e.course_id
+    LEFT JOIN "user" u ON u.id = e.organizer_id
+    LEFT JOIN registration r ON r.event_id = e.id
+    LEFT JOIN presence p ON p.event_id = e.id
+    WHERE 
+        EXTRACT(MONTH FROM e.start_at)::INT = p_month
+        AND EXTRACT(YEAR FROM e.start_at)::INT = p_year
+        AND e.status != 'canceled'
+        AND e.deleted_at IS NULL
+        AND (
+            p_user_id IS NULL 
+            OR e.organizer_id = p_user_id
+            OR EXISTS (
+                SELECT 1 FROM registration reg 
+                WHERE reg.event_id = e.id 
+                AND reg.user_id = p_user_id 
+                AND reg.status = 'completed'
+            )
+        )
+    GROUP BY 
+        e.id, e.name, e.type, e.status, e.start_at, e.stop_at, e.location,
+        c.code, c.title, u.name
+    ORDER BY 
+        EXTRACT(DAY FROM e.start_at), e.start_at;
+END;
+$$ LANGUAGE plpgsql;
+
+
+\echo '✓ Stored Procedure 7: get_events_by_month() created successfully'
 
 \pset pager off
 
@@ -401,13 +478,39 @@ FROM
     get_student_attendance_summary (:demo_student_id)
 ORDER BY course_code;
 
+-- Demonstration 7: Get Events by Month (Calendar View)
+\echo ''
+\echo '>>> DEMONSTRATION 7: EVENTS BY MONTH (CALENDAR VIEW)'
+\echo '────────────────────────────────────────────────────'
+\echo 'Current Month Events'
+\echo ''
+
+SELECT
+    day_of_month,
+    event_count,
+    event_name,
+    event_type,
+    event_status,
+    start_at,
+    course_code,
+    course_title,
+    organizer_name,
+    registration_count,
+    present_count,
+    absent_count,
+    late_count
+FROM
+    get_events_by_month(EXTRACT(MONTH FROM CURRENT_DATE)::INT, EXTRACT(YEAR FROM CURRENT_DATE)::INT)
+ORDER BY 
+    day_of_month, start_at;
+
 -- ============================================================================
 -- SUMMARY
 -- ============================================================================
 
 \echo ''
 \echo '╔═══════════════════════════════════════════════════════════════════╗'
-\echo '║              6 STORED PROCEDURES CREATED SUCCESSFULLY             ║'
+\echo '║              7 STORED PROCEDURES CREATED SUCCESSFULLY             ║'
 \echo '╠═══════════════════════════════════════════════════════════════════╣'
 \echo '║                                                                   ║'
 \echo '║  1. get_courses_by_department()     - Courses per department      ║'
@@ -416,6 +519,7 @@ ORDER BY course_code;
 \echo '║  4. get_department_statistics()     - Department analytics        ║'
 \echo '║  5. get_course_statistics()         - Course analytics            ║'
 \echo '║  6. get_student_attendance_summary()- Student attendance tracking ║'
+\echo '║  7. get_events_by_month()           - Calendar view by month      ║'
 \echo '║                                                                   ║'
 \echo '║  All procedures use RETURNS TABLE syntax for flexible data        ║'
 \echo '║  retrieval and can be used in complex queries with JOINs         ║'
