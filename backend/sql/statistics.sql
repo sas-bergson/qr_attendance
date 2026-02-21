@@ -309,7 +309,12 @@ BEGIN
     RETURN QUERY
     SELECT
         EXTRACT(DAY FROM e.start_at)::INT as day_of_month,
-        COUNT(DISTINCT e.id) OVER (PARTITION BY EXTRACT(DAY FROM e.start_at))::BIGINT as event_count,
+        (SELECT COUNT(DISTINCT e2.id)::BIGINT FROM event e2 
+         WHERE EXTRACT(DAY FROM e2.start_at) = EXTRACT(DAY FROM e.start_at)
+         AND EXTRACT(MONTH FROM e2.start_at)::INT = p_month
+         AND EXTRACT(YEAR FROM e2.start_at)::INT = p_year
+         AND e2.status != 'canceled'
+         AND e2.deleted_at IS NULL) as event_count,
         e.id::BIGINT,
         e.name,
         e.type::text,
