@@ -9,7 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0-RC1] - 2026-02-21
 
-### 🔧 Fixed
+### � Documentation
+
+#### API Documentation
+- **Swagger/OpenAPI Enhancement**: Added Bearer token security definitions to Swagger UI at `/apidocs/`
+- **Authentication Parameters**: All protected endpoints now show JWT authentication requirements in API docs
+- **Example Responses**: Added detailed request/response examples for all endpoints
+- **Enhanced README**: Added detailed authentication flows, comprehensive endpoint documentation, and error handling guide (330+ lines)
+- **API Usage Guide**: Added 10-step example usage demonstrating complete authentication flow
+
+#### Git & Versioning
+- **Git Flow Implementation**: Established `main` (production) and `develop` (integration) branches
+- **Branching Strategy**: Defined feature/*, bugfix/*, and hotfix/* branch patterns
+- **GitHub Integration**: Successfully pushed all code, tests, documentation, and frontend to GitHub
+- **Repository Structure**: Organized with backend, frontend, and documentation directories
+
+### �🔧 Fixed
 
 #### Critical Fixes
 - **JWT Token Subject Claim**: Fixed JWT creation to use string identity instead of integer for `sub` claim, resolving all 422 UNPROCESSABLE ENTITY errors on protected endpoints (#BUGFIX-001)

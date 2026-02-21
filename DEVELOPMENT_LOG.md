@@ -2,11 +2,37 @@
 
 **Project**: QR Attendance Management System  
 **Repository**: `/usr/sas/FlaskProjects/qr_attendance`  
-**Last Updated**: February 21, 2026
+**Last Updated**: February 21, 2026 (18:30 UTC)
 
 ---
 
 ## 📅 Timeline
+
+### 2026-02-21: Git Integration & API Documentation Enhancements
+
+#### Session Overview
+- **Objective**: Push code to GitHub with Git Flow branching and enhance API documentation
+- **Status**: ✅ COMPLETED
+- **Activities**: 
+  - Cleaned up corrupted repository files
+  - Created and pushed `develop` branch
+  - Enhanced API documentation in README.md (330+ line improvements)
+  - Added authentication parameters to Swagger/OpenAPI documentation
+  - Created comprehensive Git Flow branching strategy
+
+#### Key Achievements
+1. ✅ All changes successfully committed to `develop` branch
+2. ✅ Frontend code included in repository
+3. ✅ API docs at `/apidocs` now show Bearer token authentication
+4. ✅ Detailed API endpoint documentation with examples
+5. ✅ Git Flow workflow established (main → develop → feature branches)
+
+#### Commits This Session
+- **bda5a3b**: Initial develop branch with 58 files (bug fixes + tests + docs)
+- **8232cd8**: Enhanced README.md with detailed authentication parameters
+- **6d58b88**: Added Swagger authentication to /apidocs endpoint
+
+---
 
 ### 2026-02-21: Test Suite Fixes & Bug Corrections
 
