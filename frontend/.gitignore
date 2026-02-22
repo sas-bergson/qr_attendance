@@ -32,6 +32,10 @@ migrate_working_dir/
 .pub/
 /build/
 
+# BUT include lib/ source code and config files
+!lib/
+!pubspec.yaml
+
 # Symbolication related
 app.*.symbols
 
