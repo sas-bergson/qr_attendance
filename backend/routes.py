@@ -6,7 +6,7 @@ api = Blueprint('api', __name__, url_prefix='/api/v1')
 
 
 @api.route('/health', methods=['GET'])
-def health_check():
+def health_check() -> tuple:
     """
     Health check endpoint - no authentication required
     ---
@@ -40,7 +40,7 @@ def health_check():
 
 @api.route('/departments', methods=['GET'])
 @jwt_required()
-def get_departments():
+def get_departments() -> tuple:
     """
     Get all departments with statistics
     ---
@@ -97,7 +97,7 @@ def get_departments():
 
 @api.route('/department/<int:dept_id>/courses', methods=['GET'])
 @jwt_required()
-def get_courses_by_department(dept_id):
+def get_courses_by_department(dept_id) -> tuple:
     """
     Get all courses for a specific department
     ---
@@ -141,7 +141,7 @@ def get_courses_by_department(dept_id):
 
 @api.route('/course/<int:course_id>/events', methods=['GET'])
 @jwt_required()
-def get_events_by_course(course_id):
+def get_events_by_course(course_id) -> tuple:
     """
     Get all events for a specific course
     ---
@@ -192,7 +192,7 @@ def get_events_by_course(course_id):
 
 @api.route('/event/<int:event_id>/registrations', methods=['GET'])
 @jwt_required()
-def get_registrations_by_event(event_id):
+def get_registrations_by_event(event_id) -> tuple:
     """
     Get all registrations for a specific event
     ---
@@ -236,7 +236,7 @@ def get_registrations_by_event(event_id):
 
 @api.route('/course/<int:course_id>/statistics', methods=['GET'])
 @jwt_required()
-def get_course_statistics(course_id):
+def get_course_statistics(course_id) -> tuple:
     """
     Get statistics for a specific course
     ---
@@ -280,7 +280,7 @@ def get_course_statistics(course_id):
 
 @api.route('/student/<int:student_id>/attendance', methods=['GET'])
 @jwt_required()
-def get_student_attendance_summary(student_id):
+def get_student_attendance_summary(student_id) -> tuple:
     """
     Get attendance summary for a specific student
     ---
@@ -319,7 +319,7 @@ def get_student_attendance_summary(student_id):
 
 @api.route('/courses', methods=['GET'])
 @jwt_required()
-def get_all_courses_statistics():
+def get_all_courses_statistics() -> tuple:
     """
     Get statistics for all courses
     ---
@@ -361,7 +361,7 @@ def get_all_courses_statistics():
 
 @api.route('/calendar/events', methods=['GET'])
 @jwt_required()
-def get_calendar_events():
+def get_calendar_events() -> tuple:
     """
     Get events for a specific month (calendar view)
     ---

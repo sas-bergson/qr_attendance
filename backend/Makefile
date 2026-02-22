@@ -13,32 +13,32 @@ help:
 	@echo "make test-quick        - Run fast tests only"
 
 test:
-	pytest
+	./venv/bin/python -m pytest
 
 test-verbose:
-	pytest -v
+	./venv/bin/python -m pytest -v
 
 test-auth:
-	pytest tests/test_auth_endpoints.py -v
+	./venv/bin/python -m pytest tests/test_auth_endpoints.py -v
 
 test-api:
-	pytest tests/test_api_endpoints.py -v
+	./venv/bin/python -m pytest tests/test_api_endpoints.py -v
 
 test-integration:
-	pytest tests/test_integration.py -v
+	./venv/bin/python -m pytest tests/test_integration.py -v
 
 test-coverage:
-	pytest --cov=app --cov=routes --cov=auth --cov-report=term-missing
+	./venv/bin/python -m pytest --cov=app --cov=routes --cov=auth --cov-report=term-missing
 
 test-coverage-html:
-	pytest --cov=app --cov=routes --cov=auth --cov-report=html
+	./venv/bin/python -m pytest --cov=app --cov=routes --cov=auth --cov-report=html
 	@echo "Coverage report generated in htmlcov/index.html"
 
 test-quick:
-	pytest -m "not slow"
+	./venv/bin/python -m pytest -m "not slow"
 
 test-watch:
-	pytest-watch
+	./venv/bin/python -m pytest_watch
 
 clean-coverage:
 	rm -rf htmlcov/ .coverage

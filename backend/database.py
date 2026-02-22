@@ -1,4 +1,6 @@
 import psycopg2
+from typing import Generator
+from psycopg2.extensions import connection as Connection
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 from flask import current_app
@@ -8,7 +10,7 @@ class Database:
     """Database connection handler"""
     
     @staticmethod
-    def get_connection():
+    def get_connection() -> Connection:
         """Create a database connection"""
         return psycopg2.connect(
             host=current_app.config['DB_HOST'],
@@ -20,7 +22,7 @@ class Database:
     
     @staticmethod
     @contextmanager
-    def get_cursor(commit=False):
+    def get_cursor(commit=False) -> Generator:
         """Context manager for database cursor"""
         conn = Database.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -36,7 +38,7 @@ class Database:
             conn.close()
 
 
-def dict_from_cursor(cursor):
+def dict_from_cursor(cursor) -> list[dict]:
     """Convert cursor results to list of dictionaries"""
     # RealDictCursor already returns dictionaries, just convert to list
     return [dict(row) for row in cursor.fetchall()]

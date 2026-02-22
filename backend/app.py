@@ -7,7 +7,7 @@ from routes import api
 from auth import auth_bp
 
 
-def create_app():
+def create_app() -> Flask:
     """Application factory"""
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -85,11 +85,11 @@ def create_app():
         })
     
     @app.errorhandler(404)
-    def not_found(error):
+    def not_found(error) -> tuple:
         return jsonify({'error': 'Endpoint not found'}), 404
     
     @app.errorhandler(500)
-    def server_error(error):
+    def server_error(error) -> tuple:
         return jsonify({'error': 'Internal server error'}), 500
     
     return app

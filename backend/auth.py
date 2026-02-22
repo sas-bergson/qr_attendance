@@ -11,7 +11,7 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 
 @auth_bp.route('/login', methods=['POST'])
-def login():
+def login() -> tuple:
     """
     Authenticate user and return JWT tokens
     ---
