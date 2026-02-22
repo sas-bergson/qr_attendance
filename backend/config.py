@@ -3,10 +3,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Application version
+VERSION = "1.0.0-dev"
+
 class Config:
     """Base configuration"""
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
     DEBUG = FLASK_ENV == 'development'
+    
+    # Application version
+    APP_VERSION = VERSION
     
     # Database configuration
     DB_HOST = os.getenv('DB_HOST', 'localhost')
