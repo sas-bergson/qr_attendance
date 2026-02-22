@@ -390,6 +390,119 @@ git push origin --delete hotfix/BUGFIX-008-security-patch
 
 ---
 
+## Branch Cleanup Strategy
+
+After successfully merging a feature/bugfix branch to `develop` or `main`, branch cleanup is important for maintaining repository hygiene. We recommend a **hybrid approach**: delete local branches but keep remote branches.
+
+### Recommended: Delete Local, Keep Remote
+
+**Why This Approach?**
+
+✅ **Advantages**:
+- Keeps remote history intact for GitHub reference
+- Prevents accidental re-branching from old local copies
+- GitHub UI clearly shows branch as "merged" (gray background)
+- Easy recovery if needed—branch still exists on GitHub
+- Cleaner local environment (`git branch -a` shows fewer entries)
+- Remote branches serve as audit trail
+- Easier to search merged branches on GitHub web interface
+
+⚠️ **Trade-offs**:
+- Remote "merged" branches must be cleaned up eventually (usually by repo admin)
+- `git branch -a` still shows remote merged branches
+- Requires discipline to not re-branch from remote
+
+### Implementation
+
+**After Merging to develop** (feature/bugfix branches):
+
+```bash
+# Delete LOCAL copy of branch
+git branch -d feature/new-feature
+# or if merge conflicts happened
+git branch -D feature/new-feature
+
+# KEEP remote branch (don't run this)
+# git push origin --delete feature/new-feature  ← DO NOT DO THIS
+
+# Verify cleanup
+git branch -a  # Local branch gone; remote still visible
+```
+
+**After Merging to main** (release/hotfix branches):
+
+```bash
+# Same pattern - delete local, keep remote
+git branch -d release/v1.0.1
+# Keep: git push origin --delete release/v1.0.1
+
+git branch -a  # Verify
+```
+
+### Alternative: Complete Cleanup (Delete Both)
+
+If your team prefers maximum cleanliness, delete both local and remote:
+
+```bash
+# Delete local
+git branch -d feature/new-feature
+
+# Delete remote
+git push origin --delete feature/new-feature
+
+# Verify
+git branch -a  # Branch completely gone
+```
+
+**⚠️ Important**: Only use complete cleanup if your team:
+- Has GitHub PR/merge request history to reference merged work
+- Never needs to inspect old merged branches
+- Prefers minimal branch clutter over historical reference
+
+### GitHub UI Behavior
+
+After merge, GitHub shows:
+
+1. **Remote branch still exists**: Branch appears in GitHub → Branches with gray background
+2. **"Merged" indicator**: GitHub clearly marks branches as "merged into develop"
+3. **Deletion buttons available**: Can delete from GitHub web UI if needed
+4. **PR linkage**: GitHub PR remains visible in PR history
+
+### Recovery If Needed
+
+If you accidentally need to revisit a deleted local branch:
+
+```bash
+# Fetch remote branch
+git fetch origin feature/new-feature
+
+# Recreate local branch from remote
+git checkout -b feature/new-feature origin/feature/new-feature
+
+# OR: Create new branch from commit hash
+git checkout -b feature/new-feature abc1234def5678
+```
+
+### Best Practice for This Project
+
+**We use: Delete local, keep remote**
+
+```bash
+# Standard cleanup after merge
+git branch -d feature/new-feature  # ✅ Always do this
+
+# DO NOT run this automatically
+# git push origin --delete feature/new-feature  ← Skip this
+```
+
+This keeps:
+- Local environment clean
+- Remote history complete
+- Easy recovery path available
+- Audit trail on GitHub
+
+---
+
 ## Quick Reference
 
 ### Common Commands
